@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+ <HEAD>
+  <TITLE>基于分词的中文提取</TITLE>
+  <META NAME="Generator" CONTENT="EditPlus">
+  <META NAME="Author" CONTENT="">
+  <META NAME="Keywords" CONTENT="">
+  <META NAME="Description" CONTENT="">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <script type="text/javascript" src="http://www.qimingxing.info/js/jquery.js"></script>
+
+ <style type="text/css">
+ body {
+	margin-left: 5px;
+	margin-top: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+}
+ body {
+	font-size: 14px;
+}
+ .input_button {
+	font-size: 14px;
+	height: 32px;
+	width: 140px;
+}
+ #input_txt {
+	font-size: 14px;
+	height: 32px;
+	width: 320px;
+}
+ </style>
+ </HEAD>
+ <BODY>
+    <table width="600" border="0" align="center" cellpadding="0" cellspacing="2">
+    <tr>
+      <td height="54" colspan="2" bgcolor="#00CCCC"><h2><strong>基于中文分词的信息提取工具</strong></h2></td>
+    </tr>
+    <tr>
+      <td width="339" height="29"><strong>网站文字</strong></td>
+      <td width="261">&nbsp;</td>
+    </tr>
+    <tr>
+      <td colspan="2"><textarea name="text" cols="82" rows="15" id="text"></textarea></td>
+      </tr>
+    <tr>
+      <td height="40" colspan="2" align="center"><input type="button" id="segbtn" class="input_button" value="分词"></td>
+    </tr>
+    <tr>
+      <td height="25" colspan="2" valign="top"><strong>分词结果</strong></td>
+    </tr>
+    <tr>
+      <td height="68" colspan="2" valign="top" ><textarea name="text2" id="text2" cols="82" rows="15"></textarea></td>
+      </tr>
+    <tr>
+      <td><strong>数据提取（先分词，在按规则提取）</strong></td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td colspan="2" valign="middle">规则：
+      <input type="text"  id="rule" value="项目编号 nz 1-25 0 nx 1-50 5 * nx" size="72"></td>
+    </tr>
+    <tr>
+      <td colspan="2" align="center"><input type="button" id="extractbtn" class="input_button" value="提取"></td>
+    </tr>
+  </table>
+  <script type="text/javascript">
+	$(document).ready(function(){
+		$("#segbtn").on("click",function(){
+			var txt=$("#text").val();
+			$.post("/seg",{"txt":txt},function(ret){
+				var tmp=eval("("+ret+")");
+				$("#text2").val(JSON.stringify(tmp, null,4));
+			});
+		});
+		
+		$("#extractbtn").on("click",function(){
+			$.post("/extract",{"rule":$("#rule").val()},function(ret){
+				alert(ret);			
+				});	
+		});
+		
+	});
+  </script>
+ </BODY>
+</HTML>

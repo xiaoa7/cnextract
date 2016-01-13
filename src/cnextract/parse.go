@@ -184,7 +184,7 @@ func checkWord(word string, ws []Word) bool {
 			return true
 		} else if v.IsSuffix && strings.HasSuffix(word, v.Txt) {
 			return true
-		} else if v.IsMiddle && strings.Index(word, v.Txt) > 0 {
+		} else if v.IsMiddle && strings.Index(word, v.Txt) > -1 {
 			return true
 		}
 	}

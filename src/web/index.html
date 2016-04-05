@@ -58,7 +58,10 @@
     </tr>
     <tr>
       <td colspan="2" valign="middle">规则：
-      <input type="text"  id="rule" value="项目编号 nz 1-25 0 nx 1-50 5 * nx" size="72"></td>
+      <input type="text"  id="rule" value="采购人 * 1-10 0 * 4-80 5 * x" size="72"><br/>
+		抽取 以'采购人' 不限开始词性，起， 间隔1-10个词，不显类型，不限词性，长度在4-80个字符，提取是最多5个分词， 不限内容，但词性是x的位置。
+		 
+	</td>
     </tr>
     <tr>
       <td colspan="2" align="center"><input type="button" id="extractbtn" class="input_button" value="提取"></td>
@@ -69,8 +72,7 @@
 		$("#segbtn").on("click",function(){
 			var txt=$("#text").val();
 			$.post("/seg",{"txt":txt},function(ret){
-				var tmp=eval("("+ret+")");
-				$("#text2").val(JSON.stringify(tmp, null,4));
+				$("#text2").val(ret);
 			});
 		});
 		

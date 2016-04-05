@@ -7,10 +7,6 @@ import (
 	"regexp"
 )
 
-const (
-	HanlpAPI = "http://192.168.3.14:10800/analyse/2"
-)
-
 //
 var rules map[string]Rule
 var chinesereg *regexp.Regexp

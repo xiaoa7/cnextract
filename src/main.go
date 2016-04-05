@@ -4,32 +4,42 @@ package main
 import (
 	cn "cnextract"
 	"encoding/json"
-	"io/ioutil"
+	"github.com/huichen/sego"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
-const (
-	HanlpAPI = "http://192.168.3.14:10800/analyse/2"
-)
-
 var segret map[string]interface{}
-var result cn.HanlpResult
+var result cn.SegResult
+var segmenter sego.Segmenter
+
+//加载分词字典
+func init() {
+	segmenter.LoadDictionary("dictionary.txt")
+}
 
 //分词
 func DoSegmentation(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	txt := r.FormValue("txt")
 	txt = strings.Replace(txt, " ", "", -1)
-	vs := make(url.Values)
-	vs.Add("op", ",jg,")
-	vs.Add("text", txt)
-	resp, _ := http.PostForm(HanlpAPI, vs)
-	defer resp.Body.Close()
-	bs, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(bs, &result)
-	w.Write(bs)
+	//
+	segments := segmenter.Segment([]byte(txt))
+	//显示用
+	result = cn.SegResult{}
+	result.TakeTime = 0
+	result.SegWords = []*cn.SegWord{}
+	ret := ""
+	for _, v := range segments {
+		result.SegWords = append(result.SegWords, &cn.SegWord{
+			Frequency: v.Token().Frequency(),
+			Offset:    v.Start(),
+			Nature:    v.Token().Pos(),
+			Word:      v.Token().Text(),
+		})
+		ret += "[" + v.Token().Pos() + "]" + v.Token().Text() + " "
+	}
+	w.Write([]byte(ret))
 }
 
 //抽取

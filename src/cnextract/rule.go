@@ -30,12 +30,12 @@ type SubRule struct {
 	StartWords         []Word   //开始词
 	StartWordsNature   []string //开始词要求词性
 	BreakWordsLen      [2]int   //间隔词数范围
-	EndWordType        int      //结束词类型
-	EndWordNature      []string //
-	EndWordLen         [2]int   //结束词长度
-	EndWortMaxLen      int      //提取词最多抓几个
-	EndStopWords       []Word
-	EndStopWordsNature []string //开始词要求词性
+	ExtractWordType    int      //提取词类型
+	ExtractWordNature  []string //提取词词性
+	ExtractWordLen     [2]int   //提取词长度
+	ExtractWortMaxLen  int      //提取词最多抓几个词语
+	EndStopWords       []Word   //结束词标志
+	EndStopWordsNature []string //结束词词性
 
 }
 
@@ -122,16 +122,16 @@ func (r *Rule) ParseRule(line string) {
 	//处理间隔长度
 	subrule.BreakWordsLen = parseRange(tmp[2])
 	//处理要求词类型
-	subrule.EndWordType, _ = strconv.Atoi(tmp[3])
+	subrule.ExtractWordType, _ = strconv.Atoi(tmp[3])
 	//处理要求词词性
 	if tmp[4] != "*" {
-		subrule.EndWordNature = strings.Split(tmp[4], "|")
+		subrule.ExtractWordNature = strings.Split(tmp[4], "|")
 	}
 	//处理要求次长度
-	subrule.EndWordLen = parseRange(tmp[5])
+	subrule.ExtractWordLen = parseRange(tmp[5])
 	if len(tmp) == 9 {
 		//提取的最大长度
-		subrule.EndWortMaxLen, _ = strconv.Atoi(tmp[6])
+		subrule.ExtractWortMaxLen, _ = strconv.Atoi(tmp[6])
 		//结束停词
 		if tmp[7] != "*" {
 			subrule.EndStopWords = parseWord(tmp[7])

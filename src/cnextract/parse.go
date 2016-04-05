@@ -1,51 +1,35 @@
 package cnextract
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
 	"strings"
 	"time"
 )
 
-type HanlpWord struct {
-	Frequency int    `json:"frequency"`
-	Offset    int    `json:"offset"`
-	Nature    string `json:"nature"`
-	Word      string `json:"word"`
+type SegWord struct {
+	Frequency int
+	Offset    int
+	Nature    string
+	Word      string
 }
-type HanlpResult struct {
-	Result     int         `json:"耗时"`
-	HanlpWords []HanlpWord `json:"jg"`
+type SegResult struct {
+	TakeTime int
+	SegWords []*SegWord
 }
 
 //提取
-func Extract(hanlpurl, content string) (ret map[string]string) {
+func Extract(content string) (ret map[string]string) {
 	ret = make(map[string]string)
 	//先提取中文
 	t1 := time.Now()
-	//tmp := chinesereg.FindAllString(content, -1)
-	//txt := strings.Join(tmp, "")
-	txt := content
-	//分词
-	vs := make(url.Values)
-	vs.Add("op", ",jg,")
-	vs.Add("text", txt)
-	resp, _ := http.PostForm(hanlpurl, vs)
-	defer resp.Body.Close()
-	bs, _ := ioutil.ReadAll(resp.Body)
-	result := HanlpResult{}
-	err := json.Unmarshal(bs, &result)
-	if err != nil {
-		return
-	}
+	//TODO
+	result := SegResult{}
+
 	log.Printf("分词耗时:%.6f秒\n", time.Now().Sub(t1).Seconds())
 	t1 = time.Now()
 	//TODO 2中查找模式，现在用第一种
 	//开始识别,迭代所有规则
-	resultlen := len(result.HanlpWords)
+	resultlen := len(result.SegWords)
 	for name, v := range rules {
 		//识别一个规则文件
 		//log.Println("识别规则", name, v)
@@ -54,7 +38,7 @@ func Extract(hanlpurl, content string) (ret map[string]string) {
 		for _, v1 := range v.Subrules {
 			//识别一条规则
 			//L2:
-			for index, v2 := range result.HanlpWords {
+			for index, v2 := range result.SegWords {
 				//验证一条规则
 				ok := false
 				//按词性校验
@@ -90,11 +74,11 @@ func Extract(hanlpurl, content string) (ret map[string]string) {
 				ok = false
 			L3:
 				for i := index + v1.BreakWordsLen[0]; i+index < resultlen && i <= index+v1.BreakWordsLen[1]; i++ {
-					tmpword := result.HanlpWords[i]
+					tmpword := result.SegWords[i]
 					check := false
 					//验证选择词的词性
-					if len(v1.EndWordNature) > 0 {
-						for _, v4 := range v1.EndWordNature {
+					if len(v1.ExtractWordNature) > 0 {
+						for _, v4 := range v1.ExtractWordNature {
 							//log.Println(name, v4, tmpword.Nature, tmpword.Word)
 							if v4 == tmpword.Nature {
 								//log.Println("找到了")
@@ -111,16 +95,16 @@ func Extract(hanlpurl, content string) (ret map[string]string) {
 					//验证找到的词，是字母、数字、英文、中文
 					//
 					//验证长度
-					if len(tmpword.Word) >= v1.EndWordLen[0] && len(tmpword.Word) <= v1.EndWordLen[1] {
+					if len(tmpword.Word) >= v1.ExtractWordLen[0] && len(tmpword.Word) <= v1.ExtractWordLen[1] {
 						//找到词
-						if v1.EndWortMaxLen == 0 {
+						if v1.ExtractWortMaxLen == 0 {
 							retarr = append(retarr, tmpword.Word)
 						} else {
 							//找结束词
 							findstr := []string{tmpword.Word}
 						L5:
-							for j := i + 1; j <= v1.EndWortMaxLen+i; j++ {
-								tmpword2 := result.HanlpWords[j]
+							for j := i + 1; j <= v1.ExtractWortMaxLen+i; j++ {
+								tmpword2 := result.SegWords[j]
 								findstr = append(findstr, tmpword2.Word)
 								//验证结束词
 								ok2 := false
@@ -202,18 +186,16 @@ func checkInArr(s1 string, s2 []string) bool {
 }
 
 //提取
-func ExtractTest(v Rule, result HanlpResult) (ret map[string]string) {
-
-	log.Println("规则", v)
+func ExtractTest(v Rule, result SegResult) (ret map[string]string) {
 	ret = make(map[string]string)
 	//先提取中文
-	resultlen := len(result.HanlpWords)
+	resultlen := len(result.SegWords)
 	retarr := []string{}
 L1:
 	for _, v1 := range v.Subrules {
 		//识别一条规则
 	L2:
-		for index, v2 := range result.HanlpWords {
+		for index, v2 := range result.SegWords {
 			//验证一条规则
 			ok := false
 			//按词性校验开始词
@@ -227,32 +209,32 @@ L1:
 				//log.Println("开始词校验", v1.StartWords, v2.Word)
 				continue
 			}
-			log.Println("开始词", v2.Word, "验证成功", v1.BreakWordsLen, index, resultlen, v1.EndWordNature)
+			log.Println("开始词", v2.Word, "验证成功", v1.BreakWordsLen, index, resultlen, v1.ExtractWordNature)
 			//向后找满足条件的词
 			ok = false
 		L3:
 			for i := index + v1.BreakWordsLen[0]; i < resultlen && i <= index+v1.BreakWordsLen[1]; i++ {
-				tmpword := result.HanlpWords[i]
+				tmpword := result.SegWords[i]
 				//验证选择词的词性
-				if len(v1.EndWordNature) > 0 && !checkInArr(tmpword.Nature, v1.EndWordNature) {
+				if len(v1.ExtractWordNature) > 0 && !checkInArr(tmpword.Nature, v1.ExtractWordNature) {
 					continue L3
 				}
 				//TODO 验证词类型,用正则验证即可，先不做了
 				//验证找到的词，是字母、数字、英文、中文
 				//
-				log.Println(tmpword.Word, len(tmpword.Word), v1.EndWordLen[0], v1.EndWordLen[1], v1.EndWortMaxLen)
+				log.Println(tmpword.Word, len(tmpword.Word), v1.ExtractWordLen[0], v1.ExtractWordLen[1], v1.ExtractWortMaxLen)
 				//验证长度
-				if len(tmpword.Word) >= v1.EndWordLen[0] && len(tmpword.Word) <= v1.EndWordLen[1] {
+				if len(tmpword.Word) >= v1.ExtractWordLen[0] && len(tmpword.Word) <= v1.ExtractWordLen[1] {
 					log.Println("找到词", tmpword.Word)
 					//找到词
-					if v1.EndWortMaxLen == 0 {
+					if v1.ExtractWortMaxLen == 0 {
 						retarr = append(retarr, tmpword.Word)
 					} else {
 						//找结束词
 						findstr := []string{tmpword.Word}
 					L5:
-						for j := i + 1; j <= v1.EndWortMaxLen+i; j++ {
-							tmpword2 := result.HanlpWords[j]
+						for j := i + 1; j <= v1.ExtractWortMaxLen+i; j++ {
+							tmpword2 := result.SegWords[j]
 							findstr = append(findstr, tmpword2.Word)
 							//验证结束词
 							ok2 := false
@@ -280,6 +262,6 @@ L1:
 		}
 	}
 	//
-	ret["测试"] = strings.Join(retarr, ",")
+	ret["测试规则"] = strings.Join(retarr, ",")
 	return
 }
